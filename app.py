@@ -1,72 +1,65 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_squared_error
+import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Title
-st.title("💹 Linear Regression on Insurance Dataset")
+st.title("💹 Insurance Cost")
 
-# Upload CSV
-uploaded_file = st.file_uploader("📂 Upload your insurance.csv file", type=["csv"])
+st.write("""
+This app predicts **Medical Insurance Costs** using a pre-trained Linear Regression model.
+Enter your details below to estimate your insurance charges.
+""")
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-    st.subheader("📊 Dataset Preview")
-    st.write(df.head())
+# Load trained model
+try:
+    with open("base_model.pkl", "rb") as file:
+        model = pickle.load(file)
+    st.success("✅ Model loaded successfully!")
+except FileNotFoundError:
+    st.error("❌ base_model.pkl not found! Please train or add your model file.")
+    st.stop()
 
-    # Basic stats
-    st.subheader("📈 Dataset Information")
-    st.write(df.describe())
+# Sidebar inputs
+st.sidebar.header("Input Features")
+age = st.sidebar.slider("Age", 18, 100, 30)
+bmi = st.sidebar.slider("BMI (Body Mass Index)", 10.0, 50.0, 25.0)
+children = st.sidebar.slider("Number of Children", 0, 5, 1)
+smoker = st.sidebar.selectbox("Smoker", ["no", "yes"])
+region = st.sidebar.selectbox("Region", ["northeast", "northwest", "southeast", "southwest"])
 
-    # Select target and features
-    st.subheader("🎯 Select Features and Target Variable")
-    all_columns = df.columns.tolist()
-    target_column = st.selectbox("Select target column (Y)", all_columns)
-    feature_columns = st.multiselect("Select feature columns (X)", [col for col in all_columns if col != target_column])
+# Convert categorical features
+smoker_val = 1 if smoker == "yes" else 0
+region_map = {"northeast": 0, "northwest": 1, "southeast": 2, "southwest": 3}
+region_val = region_map[region]
 
-    if feature_columns and target_column:
-        X = df[feature_columns]
-        y = df[target_column]
+# Prepare input for prediction
+input_data = pd.DataFrame({
+    "age": [age],
+    "bmi": [bmi],
+    "children": [children],
+    "smoker": [smoker_val],
+    "region": [region_val]
+})
 
-        # Split data
-        test_size = st.slider("Test data size (0.1 to 0.5)", 0.1, 0.5, 0.2)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+# Prediction
+if st.button("Predict Insurance Cost"):
+    prediction = model.predict(input_data)
+    st.success(f"💰 **Predicted Insurance Cost:** ${prediction[0]:,.2f}")
 
-        # Train model
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-
-        # Predictions
-        y_pred = model.predict(X_test)
-
-        # Metrics
-        st.subheader("📊 Model Performance")
-        st.write(f"**R² Score:** {r2_score(y_test, y_pred):.3f}")
-        st.write(f"**Mean Squared Error:** {mean_squared_error(y_test, y_pred):.3f}")
-
-        # Coefficients
-        st.subheader("📉 Model Coefficients")
-        coeff_df = pd.DataFrame(model.coef_, index=feature_columns, columns=["Coefficient"])
-        st.write(coeff_df)
-
-        # Visualization
-        st.subheader("📈 Actual vs Predicted Plot")
-        fig, ax = plt.subplots()
-        sns.scatterplot(x=y_test, y=y_pred, ax=ax)
-        ax.set_xlabel("Actual")
-        ax.set_ylabel("Predicted")
-        ax.set_title("Actual vs Predicted Values")
-        st.pyplot(fig)
-
-        # Correlation heatmap
-        st.subheader("🔥 Correlation Heatmap")
-        fig, ax = plt.subplots(figsize=(8, 5))
-        sns.heatmap(df.corr(), annot=True, cmap="coolwarm", ax=ax)
-        st.pyplot(fig)
-
+# Optional visualization (for demonstration)
+st.subheader("📊 Example Visualization (Model Coefficients)")
+if hasattr(model, "coef_"):
+    coef_df = pd.DataFrame({
+        "Feature": ["age", "bmi", "children", "smoker", "region"],
+        "Coefficient": model.coef_
+    })
+    fig, ax = plt.subplots()
+    sns.barplot(x="Feature", y="Coefficient", data=coef_df, ax=ax)
+    plt.title("Linear Regression Coefficients")
+    st.pyplot(fig)
 else:
-    st.info("👆 Please upload your insurance.csv file to get started.")
+    st.info("Model coefficients not available.")
+
