@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 import pickle
 
 # Load dataset
-df = pd.read_csv("insurance.csv")
+df = pd.read_csv("best_model1")
 
 # Encode categorical variables
 df["smoker"] = df["smoker"].map({"yes": 1, "no": 0})
