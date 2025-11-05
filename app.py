@@ -15,7 +15,7 @@ Enter your details below to estimate your insurance charges.
 
 # Load trained model
 try:
-    with open("base_model1.pkl", "rb") as file:
+    with open("best_model1.pkl", "rb") as file:
         model = pickle.load(file)
     st.success("✅ Model loaded successfully!")
 except FileNotFoundError:
