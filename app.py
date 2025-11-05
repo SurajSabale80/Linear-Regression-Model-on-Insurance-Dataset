@@ -49,14 +49,14 @@ if st.button("Predict Insurance Cost"):
     prediction = model.predict(input_data)
     st.success(f"💰 **Predicted Insurance Cost:** ${prediction[0]:,.2f}")
 
-# Optional visualization (for demonstration)
-st.subheader("📊 Example Visualization (Model Coefficients)")
-if hasattr(model, "coef_"):
-    coef_df = pd.DataFrame({
-        "Feature": ["age", "bmi", "children", "smoker", "region"],
-        "Coefficient": model.coef_
-    })
-    fig, ax = plt.subplots()
+coef_df = pd.DataFrame({
+    "Feature": ["age", "bmi", "children", "smoker", "region"],
+    "Coefficient": model.coef_
+})
+fig, ax = plt.subplots()
+sns.barplot(x="Feature", y="Coefficient", data=coef_df, ax=ax)
+plt.title("Linear Regression Coefficients")
+st.pyplot(fig)
     sns.barplot(x="Feature", y="Coefficient", data=coef_df, ax=ax)
     plt.title("Linear Regression Coefficients")
     st.pyplot(fig)
